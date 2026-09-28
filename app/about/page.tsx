@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HighlightIcon from "@/components/HighlightIcon";
+import { sendContactEmail } from "./actions";
 
 function useReveal() {
   useEffect(() => {
@@ -28,15 +29,29 @@ export default function AboutPage() {
   const [form, setForm] = useState({ name: "", email: "", msg: "" });
   const [sent, setSent] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.msg.trim()) {
       setShake(true);
       setTimeout(() => setShake(false), 400);
       return;
     }
-    setSent(form.name.trim());
+    setLoading(true);
+    setError(null);
+    const result = await sendContactEmail({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      msg: form.msg.trim(),
+    });
+    setLoading(false);
+    if (result.ok) {
+      setSent(form.name.trim());
+    } else {
+      setError(result.message);
+    }
   };
 
   return (
@@ -140,8 +155,31 @@ export default function AboutPage() {
                     placeholder="Cuéntanos qué tienes en mente…"
                   />
                 </div>
-                <button className="btn xl press" type="submit" style={{ width: "100%" }}>
-                  ▶&nbsp; ENVIAR MENSAJE
+                {error && (
+                  <div className="terminal-success" style={{ borderColor: "var(--magenta)", marginBottom: 12 }}>
+                    <div className="term-bar">
+                      <span className="dot r" /><span className="dot y" /><span className="dot g" />
+                      <span className="term-title">VAULT-OS // ERROR</span>
+                    </div>
+                    <div className="term-body">
+                      <div className="line" style={{ color: "var(--magenta)" }}>
+                        &gt; ERROR: {error}
+                      </div>
+                      <div style={{ marginTop: 12 }}>
+                        <button className="btn ghost" type="button" onClick={() => setError(null)}>
+                          REINTENTAR
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <button
+                  className="btn xl press"
+                  type="submit"
+                  disabled={loading}
+                  style={{ width: "100%", opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? "ENVIANDO…" : "▶  ENVIAR MENSAJE"}
                 </button>
               </>
             ) : (
