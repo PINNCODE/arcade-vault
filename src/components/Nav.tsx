@@ -15,7 +15,8 @@ export default function Nav({ user, onSignOut }: NavProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/" || pathname.startsWith("/games");
+    if (href === "/") return pathname === "/";
+    if (href === "/games") return pathname === "/games" || pathname.startsWith("/games/");
     return pathname.startsWith(href);
   };
 
@@ -33,13 +34,19 @@ export default function Nav({ user, onSignOut }: NavProps) {
 
         <div className="links">
           <Link href="/" className={isActive("/") ? "active" : ""}>
-            Biblioteca
+            HOME
+          </Link>
+          <Link href="/games" className={isActive("/games") ? "active" : ""}>
+            JUEGOS
           </Link>
           <Link
             href="/hall-of-fame"
             className={isActive("/hall-of-fame") ? "active" : ""}
           >
-            Salón de la Fama
+            SALÓN
+          </Link>
+          <Link href="/about" className={isActive("/about") ? "active" : ""}>
+            ABOUT
           </Link>
         </div>
 
@@ -78,14 +85,20 @@ export default function Nav({ user, onSignOut }: NavProps) {
           MENÚ
         </div>
         <Link href="/" className={isActive("/") ? "active" : ""} onClick={close}>
-          Biblioteca
+          HOME
+        </Link>
+        <Link href="/games" className={isActive("/games") ? "active" : ""} onClick={close}>
+          JUEGOS
         </Link>
         <Link
           href="/hall-of-fame"
           className={isActive("/hall-of-fame") ? "active" : ""}
           onClick={close}
         >
-          Salón de la Fama
+          SALÓN
+        </Link>
+        <Link href="/about" className={isActive("/about") ? "active" : ""} onClick={close}>
+          ABOUT
         </Link>
         <Link
           href="/auth"
