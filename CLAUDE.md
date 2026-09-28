@@ -25,6 +25,10 @@ This project uses spec-driven design. All features start as a spec before any co
 - `/spec <feature>` — create a spec interactively (saves to `specs/NN-slug.md`)
 - `/spec-impl <NN-slug>` — implement an **Approved** spec step by step
 
+## Design
+
+- usar siempre la skill `/frontend-design` para disenar el frontend 
+
 Workflow: `/spec` → review → change state to `Approved` → `/spec-impl`
 
 Specs live in `specs/`. Branch naming: `spec-NN-slug`. Never implement a spec whose state is not `Approved`.
