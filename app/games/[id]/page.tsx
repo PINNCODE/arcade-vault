@@ -25,7 +25,7 @@ export default function GameDetailPage({ params }: Props) {
         <div className="pixel" style={{ fontSize: 14, color: "var(--magenta)", marginBottom: 12 }}>
           JUEGO NO ENCONTRADO
         </div>
-        <button className="btn" onClick={() => router.push("/")}>
+        <button className="btn" onClick={() => router.push("/games")}>
           VOLVER AL VAULT
         </button>
       </div>
@@ -86,7 +86,7 @@ export default function GameDetailPage({ params }: Props) {
             </button>
             <button
               className="btn ghost lg"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/games")}
             >
               VOLVER AL VAULT
             </button>
