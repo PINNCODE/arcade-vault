@@ -1,4 +1,4 @@
-import type { Game } from "@/lib/data";
+import type { Game } from "@/lib/supabase/types";
 
 interface MiniCardProps {
   game: Game;
