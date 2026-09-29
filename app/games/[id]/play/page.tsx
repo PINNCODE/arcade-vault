@@ -3,19 +3,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import { GAMES } from "@/lib/data";
 import { useSession } from "@/hooks/useSession";
+import { saveScore } from "@/lib/supabase/queries-client";
+import type { Game } from "@/lib/supabase/types";
 
 interface Props {
   params: Promise<{ id: string }>;
+  game: Game;
 }
 
-export default function GamePlayerPage({ params }: Props) {
-  const { id } = use(params);
+function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
-  const { user, saveScore } = useSession();
-
-  const game = GAMES.find((g) => g.id === id);
+  const { user } = useSession();
 
   const [score, setScore] = useState(0);
   const [lives] = useState(3);
@@ -24,13 +23,11 @@ export default function GamePlayerPage({ params }: Props) {
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "INVITADO");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (over || paused) return;
-    const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
-      220
-    );
+    const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
     return () => clearInterval(t);
   }, [over, paused]);
 
@@ -46,18 +43,15 @@ export default function GamePlayerPage({ params }: Props) {
     setSaved(false);
   };
 
-  if (!game) {
-    return (
-      <div style={{ textAlign: "center", padding: 80, color: "var(--ink-faint)" }}>
-        <div className="pixel" style={{ fontSize: 14, color: "var(--magenta)", marginBottom: 12 }}>
-          JUEGO NO ENCONTRADO
-        </div>
-        <button className="btn" onClick={() => router.push("/")}>
-          VOLVER AL VAULT
-        </button>
-      </div>
-    );
-  }
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveScore(game.id, name, score);
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="av-player fade-in">
@@ -65,7 +59,9 @@ export default function GamePlayerPage({ params }: Props) {
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div className="hud-stat">
             <div className="l">Jugador</div>
-            <div className="v" style={{ color: "var(--ink)" }}>{name}</div>
+            <div className="v" style={{ color: "var(--ink)" }}>
+              {name}
+            </div>
           </div>
           <div className="hud-stat">
             <div className="l">Puntuación</div>
@@ -81,19 +77,13 @@ export default function GamePlayerPage({ params }: Props) {
           </div>
         </div>
         <div className="hud-actions">
-          <button
-            className="btn yellow"
-            onClick={() => setPaused((p) => !p)}
-          >
+          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
           <button className="btn magenta" onClick={() => setOver(true)}>
             FIN
           </button>
-          <button
-            className="btn ghost"
-            onClick={() => router.push(`/games/${game.id}`)}
-          >
+          <button className="btn ghost" onClick={() => router.push(`/games/${game.id}`)}>
             SALIR
           </button>
         </div>
@@ -109,10 +99,7 @@ export default function GamePlayerPage({ params }: Props) {
             <div className="player-ship" />
           </div>
           {paused && (
-            <div
-              className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
-            >
+            <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
                   EN PAUSA
@@ -149,19 +136,11 @@ export default function GamePlayerPage({ params }: Props) {
               <div className="input-row">
                 <input
                   value={name}
-                  onChange={(e) =>
-                    setName(e.target.value.toUpperCase().slice(0, 10))
-                  }
+                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
                   placeholder="TUS INICIALES"
                 />
-                <button
-                  className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score, name });
-                    setSaved(true);
-                  }}
-                >
-                  GUARDAR PUNTUACIÓN
+                <button className="btn yellow" onClick={handleSave} disabled={saving}>
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
                 </button>
               </div>
             ) : (
@@ -171,10 +150,7 @@ export default function GamePlayerPage({ params }: Props) {
               <button className="btn" onClick={restart}>
                 JUGAR DE NUEVO
               </button>
-              <button
-                className="btn magenta"
-                onClick={() => router.push("/")}
-              >
+              <button className="btn magenta" onClick={() => router.push("/")}>
                 VOLVER AL VAULT
               </button>
             </div>
@@ -183,4 +159,24 @@ export default function GamePlayerPage({ params }: Props) {
       )}
     </div>
   );
+}
+
+export default function GamePlayerPage({ params }: Props) {
+  const { id } = use(params);
+
+  // This page is a placeholder for games without a dedicated play page.
+  // It uses a mock game loop. Real games (like /games/rocas/play) have their own page.
+  const mockGame: Game = {
+    id,
+    title: id.toUpperCase().replace(/-/g, " "),
+    short: "",
+    long: "",
+    cat: "ARCADE",
+    cover: "cover-bricks",
+    color: "cyan",
+    best: 0,
+    plays: "0",
+  };
+
+  return <GamePlayer game={mockGame} />;
 }

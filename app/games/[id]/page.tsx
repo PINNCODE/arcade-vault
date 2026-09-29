@@ -1,36 +1,16 @@
-"use client";
-
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { use } from "react";
-import { GAMES, seededScores } from "@/lib/data";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getGame, getTopScores } from "@/lib/supabase/queries";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default function GameDetailPage({ params }: Props) {
-  const { id } = use(params);
-  const router = useRouter();
+export default async function GameDetailPage({ params }: Props) {
+  const { id } = await params;
+  const [game, scores] = await Promise.all([getGame(id), getTopScores(id, 5)]);
 
-  const game = useMemo(() => GAMES.find((g) => g.id === id), [id]);
-  const scores = useMemo(
-    () => seededScores(id.length * 17 + 3, 10),
-    [id]
-  );
-
-  if (!game) {
-    return (
-      <div style={{ textAlign: "center", padding: 80, color: "var(--ink-faint)" }}>
-        <div className="pixel" style={{ fontSize: 14, color: "var(--magenta)", marginBottom: 12 }}>
-          JUEGO NO ENCONTRADO
-        </div>
-        <button className="btn" onClick={() => router.push("/games")}>
-          VOLVER AL VAULT
-        </button>
-      </div>
-    );
-  }
+  if (!game) notFound();
 
   return (
     <div className="av-detail fade-in">
@@ -78,18 +58,12 @@ export default function GameDetailPage({ params }: Props) {
             </div>
           </div>
           <div className="detail-actions">
-            <button
-              className="btn xl pulse"
-              onClick={() => router.push(`/games/${game.id}/play`)}
-            >
-              ▶  JUGAR AHORA
-            </button>
-            <button
-              className="btn ghost lg"
-              onClick={() => router.push("/games")}
-            >
+            <Link className="btn xl pulse" href={`/games/${game.id}/play`}>
+              ▶ JUGAR AHORA
+            </Link>
+            <Link className="btn ghost lg" href="/games">
               VOLVER AL VAULT
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -97,30 +71,44 @@ export default function GameDetailPage({ params }: Props) {
       <aside>
         <div className="leaderboard">
           <h3>MEJORES PUNTUACIONES</h3>
-          {scores.map((r, i) => (
+          {scores.length === 0 ? (
             <div
-              key={r.name + i}
-              className={
-                "lb-row" +
-                (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
-              }
+              style={{
+                padding: "20px 0",
+                color: "var(--ink-faint)",
+                fontSize: 12,
+                textAlign: "center",
+              }}
             >
-              <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-              <div className="pl">
-                {r.name}
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "var(--ink-faint)",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {r.date}
-                </div>
-              </div>
-              <div className="sc">{r.score.toLocaleString("es-ES")}</div>
+              SÉ EL PRIMERO EN REGISTRAR UN SCORE
             </div>
-          ))}
+          ) : (
+            scores.map((r, i) => (
+              <div
+                key={r.id}
+                className={
+                  "lb-row" + (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
+                }
+              >
+                <div className="rk">#{String(i + 1).padStart(2, "0")}</div>
+                <div className="pl">
+                  {r.player_name}
+                  <div style={{ fontSize: 10, color: "var(--ink-faint)", letterSpacing: "0.1em" }}>
+                    {new Date(r.created_at).toLocaleDateString("es-ES")}
+                  </div>
+                </div>
+                <div className="sc">{r.score.toLocaleString("es-ES")}</div>
+              </div>
+            ))
+          )}
+          <div style={{ marginTop: 12, textAlign: "center" }}>
+            <Link
+              href={`/leaderboard?game=${game.id}`}
+              style={{ fontSize: 11, color: "var(--ink-dim)", letterSpacing: "0.1em" }}
+            >
+              VER RANKING COMPLETO →
+            </Link>
+          </div>
         </div>
       </aside>
     </div>

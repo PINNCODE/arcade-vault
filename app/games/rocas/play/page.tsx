@@ -2,15 +2,13 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { GAMES } from "@/lib/data";
 import { useSession } from "@/hooks/useSession";
+import { saveScore } from "@/lib/supabase/queries-client";
 import AsteroidsGame from "@/components/games/AsteroidsGame";
-
-const game = GAMES.find((g) => g.id === "rocas")!;
 
 export default function RocasPlayPage() {
   const router = useRouter();
-  const { user, saveScore } = useSession();
+  const { user } = useSession();
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -20,9 +18,9 @@ export default function RocasPlayPage() {
   const [finalScore, setFinalScore] = useState(0);
   const [name, setName] = useState(user ? user.name : "INVITADO");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [restartKey, setRestartKey] = useState(0);
 
-  // keep current score in a ref so handleFin can read it synchronously
   const scoreRef = useRef(0);
 
   const handleScoreChange = useCallback((s: number) => {
@@ -30,13 +28,8 @@ export default function RocasPlayPage() {
     setScore(s);
   }, []);
 
-  const handleLivesChange = useCallback((l: number) => {
-    setLives(l);
-  }, []);
-
-  const handleLevelChange = useCallback((l: number) => {
-    setLevel(l);
-  }, []);
+  const handleLivesChange = useCallback((l: number) => setLives(l), []);
+  const handleLevelChange = useCallback((l: number) => setLevel(l), []);
 
   const handleGameOver = useCallback((s: number) => {
     setFinalScore(s);
@@ -58,6 +51,16 @@ export default function RocasPlayPage() {
     setFinalScore(0);
     scoreRef.current = 0;
     setRestartKey((k) => k + 1);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveScore("rocas", name, finalScore);
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -90,7 +93,7 @@ export default function RocasPlayPage() {
           <button className="btn magenta" onClick={handleFin} disabled={over}>
             FIN
           </button>
-          <button className="btn ghost" onClick={() => router.push(`/games/${game.id}`)}>
+          <button className="btn ghost" onClick={() => router.push("/games/rocas")}>
             SALIR
           </button>
         </div>
@@ -131,7 +134,7 @@ export default function RocasPlayPage() {
         </div>
         <div className="crt-bottom">
           <span className="led">SEÑAL OK</span>
-          <span>{game.title} · CRT-83 · 60 HZ</span>
+          <span>ROCAS · CRT-83 · 60 HZ</span>
           <span>CARGA · 1MB</span>
         </div>
       </div>
@@ -149,14 +152,8 @@ export default function RocasPlayPage() {
                   onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
                   placeholder="TUS INICIALES"
                 />
-                <button
-                  className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score: finalScore, name });
-                    setSaved(true);
-                  }}
-                >
-                  GUARDAR PUNTUACIÓN
+                <button className="btn yellow" onClick={handleSave} disabled={saving}>
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
                 </button>
               </div>
             ) : (

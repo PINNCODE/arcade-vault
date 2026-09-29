@@ -39,11 +39,11 @@ export default function Nav({ user, onSignOut }: NavProps) {
           <Link href="/games" className={isActive("/games") ? "active" : ""}>
             JUEGOS
           </Link>
-          <Link
-            href="/hall-of-fame"
-            className={isActive("/hall-of-fame") ? "active" : ""}
-          >
+          <Link href="/hall-of-fame" className={isActive("/hall-of-fame") ? "active" : ""}>
             SALÓN
+          </Link>
+          <Link href="/leaderboard" className={isActive("/leaderboard") ? "active" : ""}>
+            LEADERBOARD
           </Link>
           <Link href="/about" className={isActive("/about") ? "active" : ""}>
             ABOUT
@@ -67,19 +67,12 @@ export default function Nav({ user, onSignOut }: NavProps) {
           </Link>
         )}
 
-        <button
-          className="btn ghost hamburger"
-          onClick={() => setOpen(true)}
-          aria-label="Menú"
-        >
+        <button className="btn ghost hamburger" onClick={() => setOpen(true)} aria-label="Menú">
           ≡
         </button>
       </nav>
 
-      <div
-        className={"av-mobile-backdrop" + (open ? " open" : "")}
-        onClick={close}
-      />
+      <div className={"av-mobile-backdrop" + (open ? " open" : "")} onClick={close} />
       <aside className={"av-mobile-panel" + (open ? " open" : "")}>
         <div className="pixel neon-cyan" style={{ fontSize: 11, marginBottom: 16 }}>
           MENÚ
@@ -97,14 +90,17 @@ export default function Nav({ user, onSignOut }: NavProps) {
         >
           SALÓN
         </Link>
+        <Link
+          href="/leaderboard"
+          className={isActive("/leaderboard") ? "active" : ""}
+          onClick={close}
+        >
+          LEADERBOARD
+        </Link>
         <Link href="/about" className={isActive("/about") ? "active" : ""} onClick={close}>
           ABOUT
         </Link>
-        <Link
-          href="/auth"
-          className={isActive("/auth") ? "active" : ""}
-          onClick={close}
-        >
+        <Link href="/auth" className={isActive("/auth") ? "active" : ""} onClick={close}>
           {user ? "Cuenta" : "Iniciar Sesión"}
         </Link>
         <div style={{ flex: 1 }} />
