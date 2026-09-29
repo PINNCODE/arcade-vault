@@ -42,3 +42,6 @@ next-env.d.ts
 
 .playwright-screenshots/*
 .playwright-mcp/*
+
+# local MCP config (contains project-specific credentials)
+.mcp.json

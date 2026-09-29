@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(jq -r '.tool_input.file_path // empty' 2>/dev/null); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|jsx|md)$'; then cd /Users/notblu/Desktop/ClaudeCode/05-arcade-vault && npx prettier --write \"$FILE\" 2>/dev/null; fi; if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|jsx)$'; then cd /Users/notblu/Desktop/ClaudeCode/05-arcade-vault && npx eslint --fix \"$FILE\" 2>/dev/null || true; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
