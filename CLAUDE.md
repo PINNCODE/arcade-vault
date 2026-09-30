@@ -61,6 +61,7 @@ This project uses Next.js **16** — a version with breaking changes from what m
 | 07  | Tetris game                           | Implementado |
 | 08  | Arkanoid game                         | Implementado |
 | 09  | Snake (Serpentina) game               | Implementado |
+| 10  | Mobile touch controls (all 4 games)   | Implementado |
 
 ## Project Structure
 
@@ -124,7 +125,8 @@ Game canvas components live in `src/components/games/`. Each game's play page is
 
 ## Agents
 
-| Agent           | When to use                                                                                                                                                                         |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@game-planner` | Decide which game to add next; scores candidates against the catalog; updates `references/game-suggestions.md` with history + description blocks                                    |
-| `@game-jam`     | Explore creative ideas under a free theme; runs 3 sub-agents in parallel, scores all proposals, saves winner as `<slug>-mvp.md` and the rest as `<slug>.md` under `specs/game-jam/` |
+| Agent            | When to use                                                                                                                                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@game-planner`  | Decide which game to add next; scores candidates against the catalog; updates `references/game-suggestions.md` with history + description blocks                                                                                                                            |
+| `@game-jam`      | Explore creative ideas under a free theme; runs 3 sub-agents in parallel, scores all proposals, saves winner as `<slug>-mvp.md` and the rest as `<slug>.md` under `specs/game-jam/`                                                                                         |
+| `@mobile-porter` | Audit and fix mobile layout for all 4 game pages; verifies touch controls visibility, canvas fit at 375 px, buttons ≥ 56×56 px, `touch-action: manipulation`, and no desktop regressions; auto-starts dev server if needed; saves screenshots to `.playwright-screenshots/` |
