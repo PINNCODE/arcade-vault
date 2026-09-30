@@ -107,6 +107,10 @@ specs/                      # Feature specs (NN-slug.md)
 - **`games`** — id, title, short, long, cat, cover, color, best, plays
 - **`scores`** — id, game_id, player_name, score, created_at
 
+## Implemented Games
+
+To know which games are already implemented, read `references/implemented-games.md` — it lists the id, title, category and description of every game registered in Supabase.
+
 ## Adding a New Game
 
 1. Run `/game-integration <game name>` — creates the spec
