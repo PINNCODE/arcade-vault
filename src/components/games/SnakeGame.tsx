@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTouchDevice } from "@/hooks/useTouchDevice";
+import { TouchControls } from "./TouchControls";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface Props {
   paused?: boolean;
   restartKey?: number;
+  forceTouch?: boolean;
   onGameOver: (score: number, metadata: { fruitsEaten: number; maxLength: number }) => void;
   onScoreChange?: (score: number) => void;
 }
@@ -72,6 +76,7 @@ const GRID_LINE = "rgba(255,255,255,0.06)";
 export default function SnakeGame({
   paused = false,
   restartKey = 0,
+  forceTouch = false,
   onGameOver,
   onScoreChange,
 }: Props) {
@@ -79,6 +84,13 @@ export default function SnakeGame({
   const pausedRef = useRef(paused);
   const onGameOverRef = useRef(onGameOver);
   const onScoreChangeRef = useRef(onScoreChange);
+  const touchDirRef = useRef<((dir: "UP" | "DOWN" | "LEFT" | "RIGHT") => void) | null>(null);
+  const isTouch = useTouchDevice();
+  const showControls = isTouch || forceTouch;
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  useEffect(() => {
+    setPortalTarget(document.getElementById("game-touch-area") ?? document.body);
+  }, []);
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -404,6 +416,14 @@ export default function SnakeGame({
       window.addEventListener("keydown", handleKeyDown);
     }
 
+    touchDirRef.current = (d) => {
+      if (gameOver) return;
+      if (d === "UP" && dir !== "DOWN") nextDir = "UP";
+      else if (d === "DOWN" && dir !== "UP") nextDir = "DOWN";
+      else if (d === "LEFT" && dir !== "RIGHT") nextDir = "LEFT";
+      else if (d === "RIGHT" && dir !== "LEFT") nextDir = "RIGHT";
+    };
+
     if (img.complete && img.naturalWidth > 0) {
       start();
     } else {
@@ -415,6 +435,7 @@ export default function SnakeGame({
       guard.active = false;
       if (intervalId !== null) clearInterval(intervalId);
       window.removeEventListener("keydown", handleKeyDown);
+      touchDirRef.current = null;
     };
   }, [restartKey]);
 
@@ -458,6 +479,20 @@ export default function SnakeGame({
           </div>
         ))}
       </div>
+      {portalTarget &&
+        createPortal(
+          <div className="flex items-center justify-center w-full h-full">
+            <TouchControls
+              visible={showControls}
+              layout="dpad"
+              onDirection={(dir) => {
+                const map = { up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT" } as const;
+                touchDirRef.current?.(map[dir]);
+              }}
+            />
+          </div>,
+          portalTarget
+        )}
     </div>
   );
 }

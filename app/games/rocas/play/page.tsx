@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { saveScore } from "@/lib/supabase/queries-client";
 import AsteroidsGame from "@/components/games/AsteroidsGame";
+import { useTouchDevice } from "@/hooks/useTouchDevice";
 
 export default function RocasPlayPage() {
   const router = useRouter();
@@ -20,6 +21,12 @@ export default function RocasPlayPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [restartKey, setRestartKey] = useState(0);
+  const [forceTouch, setForceTouch] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("touch") === "1") setForceTouch(true);
+  }, []);
+  const isTouch = useTouchDevice();
+  const showControls = isTouch || forceTouch;
 
   const scoreRef = useRef(0);
 
@@ -64,7 +71,14 @@ export default function RocasPlayPage() {
   };
 
   return (
-    <div className="av-player fade-in">
+    <div
+      className="av-player fade-in"
+      style={
+        showControls
+          ? { display: "flex", flexDirection: "column", height: "calc(100svh - 81px)" }
+          : undefined
+      }
+    >
       <div className="player-hud">
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div className="hud-stat">
@@ -96,15 +110,23 @@ export default function RocasPlayPage() {
           <button className="btn ghost" onClick={() => router.push("/games/rocas")}>
             SALIR
           </button>
+          <button
+            className="btn ghost"
+            onClick={() => setForceTouch((t) => !t)}
+            title="Toggle touch controls (debug)"
+          >
+            🕹️
+          </button>
         </div>
       </div>
 
-      <div className="crt">
-        <div className="crt-screen">
+      <div className="crt" style={showControls ? { flex: 1, minHeight: 0 } : undefined}>
+        <div className="crt-screen" style={showControls ? { height: "100%" } : undefined}>
           {!over && (
             <AsteroidsGame
               paused={paused}
               restartKey={restartKey}
+              forceTouch={forceTouch}
               onScoreChange={handleScoreChange}
               onLivesChange={handleLivesChange}
               onLevelChange={handleLevelChange}
@@ -138,6 +160,17 @@ export default function RocasPlayPage() {
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      <div
+        id="game-touch-area"
+        style={{
+          flex: "0 0 auto",
+          minHeight: 150,
+          display: showControls ? "flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      />
 
       {over && (
         <div className="modal-bd">

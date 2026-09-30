@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTouchDevice } from "@/hooks/useTouchDevice";
+import { TouchControls } from "./TouchControls";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -14,6 +17,7 @@ export interface TetrisCallbacks {
 interface Props extends TetrisCallbacks {
   paused: boolean;
   restartKey?: number;
+  forceTouch?: boolean;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -86,6 +90,7 @@ const LINE_SCORES = [0, 100, 300, 500, 800];
 export default function TetrisGame({
   paused,
   restartKey = 0,
+  forceTouch = false,
   onScoreChange,
   onLinesChange,
   onLevelChange,
@@ -94,6 +99,18 @@ export default function TetrisGame({
   const boardRef = useRef<HTMLCanvasElement>(null);
   const nextRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
+  const touchActionsRef = useRef<{
+    moveLeft: () => void;
+    moveRight: () => void;
+    softDrop: () => void;
+    rotate: () => void;
+  } | null>(null);
+  const isTouch = useTouchDevice();
+  const showControls = isTouch || forceTouch;
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  useEffect(() => {
+    setPortalTarget(document.getElementById("game-touch-area") ?? document.body);
+  }, []);
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -377,11 +394,29 @@ export default function TetrisGame({
     cancelAnimationFrame(animId);
     animId = requestAnimationFrame(loop);
 
+    touchActionsRef.current = {
+      moveLeft: () => {
+        if (!pausedRef.current && !gameOver && !collide(current.shape, current.x - 1, current.y))
+          current.x--;
+      },
+      moveRight: () => {
+        if (!pausedRef.current && !gameOver && !collide(current.shape, current.x + 1, current.y))
+          current.x++;
+      },
+      softDrop: () => {
+        if (!pausedRef.current && !gameOver) softDrop();
+      },
+      rotate: () => {
+        if (!pausedRef.current && !gameOver) tryRotate();
+      },
+    };
+
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("keydown", handleKeyDown);
+      touchActionsRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restartKey]);
@@ -475,6 +510,22 @@ export default function TetrisGame({
           </div>
         </div>
       </div>
+      {portalTarget &&
+        createPortal(
+          <div className="flex items-center justify-center w-full h-full">
+            <TouchControls
+              visible={showControls}
+              layout="dpad"
+              onDirection={(dir) => {
+                if (dir === "left") touchActionsRef.current?.moveLeft();
+                else if (dir === "right") touchActionsRef.current?.moveRight();
+                else if (dir === "up") touchActionsRef.current?.rotate();
+                else if (dir === "down") touchActionsRef.current?.softDrop();
+              }}
+            />
+          </div>,
+          portalTarget
+        )}
     </>
   );
 }
