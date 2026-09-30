@@ -1,0 +1,207 @@
+"use client";
+
+import { useState, useCallback, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/hooks/useSession";
+import { saveScore } from "@/lib/supabase/queries-client";
+import { useTouchDevice } from "@/hooks/useTouchDevice";
+
+const FroggerGame = dynamic(() => import("@/components/games/FroggerGame"), { ssr: false });
+
+export default function FroggerPlayPage() {
+  const router = useRouter();
+  const { user } = useSession();
+
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [level, setLevel] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const [over, setOver] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [name, setName] = useState(user ? user.name : "INVITADO");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
+
+  const [forceTouch, setForceTouch] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("touch") === "1") setForceTouch(true);
+  }, []);
+  const isTouch = useTouchDevice();
+  const showControls = isTouch || forceTouch;
+
+  const scoreRef = useRef(0);
+
+  const handleScoreChange = useCallback((s: number) => {
+    scoreRef.current = s;
+    setScore(s);
+  }, []);
+
+  const handleLivesChange = useCallback((l: number) => setLives(l), []);
+  const handleLevelChange = useCallback((l: number) => setLevel(l), []);
+
+  const handleGameOver = useCallback((s: number) => {
+    setFinalScore(s);
+    setOver(true);
+  }, []);
+
+  const handleFin = () => {
+    setFinalScore(scoreRef.current);
+    setOver(true);
+  };
+
+  const restart = () => {
+    setScore(0);
+    setLives(3);
+    setLevel(1);
+    setPaused(false);
+    setOver(false);
+    setSaved(false);
+    setFinalScore(0);
+    scoreRef.current = 0;
+    setGameKey((k) => k + 1);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveScore("frogger", name, finalScore);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("av_player_name", name);
+      }
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="av-player fade-in"
+      style={
+        showControls
+          ? { display: "flex", flexDirection: "column", height: "calc(100svh - 81px)" }
+          : undefined
+      }
+    >
+      <div className="player-hud">
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+          <div className="hud-stat">
+            <div className="l">Jugador</div>
+            <div className="v" style={{ color: "var(--ink)" }}>
+              {name}
+            </div>
+          </div>
+          <div className="hud-stat">
+            <div className="l">Puntuación</div>
+            <div className="v">{score.toLocaleString("es-ES")}</div>
+          </div>
+          <div className="hud-stat lives">
+            <div className="l">Vidas</div>
+            <div className="v">{"♥ ".repeat(Math.max(lives, 0)).trim() || "—"}</div>
+          </div>
+          <div className="hud-stat level">
+            <div className="l">Nivel</div>
+            <div className="v">{String(level).padStart(2, "0")}</div>
+          </div>
+        </div>
+        <div className="hud-actions">
+          <button className="btn yellow" onClick={() => setPaused((p) => !p)} disabled={over}>
+            {paused ? "REANUDAR" : "PAUSA"}
+          </button>
+          <button className="btn magenta" onClick={handleFin} disabled={over}>
+            FIN
+          </button>
+          <button className="btn ghost" onClick={() => router.push("/games/frogger")}>
+            SALIR
+          </button>
+        </div>
+      </div>
+
+      <div className="crt" style={showControls ? { flex: 1, minHeight: 0 } : undefined}>
+        <div className="crt-screen" style={showControls ? { height: "100%" } : undefined}>
+          {!over && (
+            <FroggerGame
+              key={gameKey}
+              paused={paused}
+              forceTouch={forceTouch}
+              onScoreChange={handleScoreChange}
+              onLivesChange={handleLivesChange}
+              onLevelChange={handleLevelChange}
+              onGameOver={handleGameOver}
+            />
+          )}
+          {paused && !over && (
+            <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
+              <div>
+                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                  EN PAUSA
+                </div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: "var(--ink-dim)",
+                    marginTop: 10,
+                    letterSpacing: "0.16em",
+                  }}
+                >
+                  PULSA REANUDAR PARA CONTINUAR
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="crt-bottom">
+          <span className="led">SEÑAL OK</span>
+          <span>FROGGER · CRT-83 · 60 HZ</span>
+          <span>CARGA · 1MB</span>
+        </div>
+      </div>
+
+      <div
+        id="game-touch-area"
+        style={{
+          flex: "0 0 auto",
+          minHeight: 150,
+          display: showControls ? "flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      />
+
+      {over && (
+        <div className="modal-bd">
+          <div className="modal">
+            <h2>FIN DEL JUEGO</h2>
+            <div className="final-label">PUNTUACIÓN FINAL</div>
+            <div className="final">{finalScore.toLocaleString("es-ES")}</div>
+            {!saved ? (
+              <div className="input-row">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
+                  placeholder="TUS INICIALES"
+                />
+                <button className="btn yellow" onClick={handleSave} disabled={saving || saved}>
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
+                </button>
+              </div>
+            ) : (
+              <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
+            )}
+            <div className="actions">
+              <button className="btn" onClick={restart}>
+                JUGAR DE NUEVO
+              </button>
+              <button className="btn magenta" onClick={() => router.push("/")}>
+                VOLVER AL VAULT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
