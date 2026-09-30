@@ -32,7 +32,7 @@ This project uses spec-driven design. All features start as a spec before any co
 
 Workflow: `/spec` → review → change state to `Approved` → `/spec-impl`
 
-Specs live in `specs/`. Branch naming: `spec-NN-slug`. Never implement a spec whose state is not `Approved`.
+Specs live in `specs/`. Game-jam specs live in `specs/game-jam/`. Branch naming: `spec-NN-slug`. Never implement a spec whose state is not `Approved`.
 
 ## Next.js Version Note
 
@@ -114,9 +114,17 @@ To know which games are already implemented, read `references/implemented-games.
 ## Adding a New Game
 
 0. Optional: ask `@game-planner` which game to add (suggestion history in `references/game-suggestions.md`)
-1. Run `/game-integration <game name>` — creates the spec
+   - Alternative: use `@game-jam <theme>` to explore creative ideas — generates 3 proposals in parallel, picks the best one (marked `-mvp`), and saves all specs to `specs/game-jam/`
+1. Run `/game-integration <game name>` — creates the spec (reads `references/game-suggestions.md` for context)
 2. Review spec → change state to `Approved`
 3. Run `/spec-impl NN-slug` — implements canvas component, play page, and Supabase score submission
 4. Register game in the `games` table in Supabase
 
 Game canvas components live in `src/components/games/`. Each game's play page is at `app/games/<slug>/play/page.tsx`. Scores are submitted to Supabase via `src/lib/supabase/queries-client.ts`.
+
+## Agents
+
+| Agent           | When to use                                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@game-planner` | Decide which game to add next; scores candidates against the catalog; updates `references/game-suggestions.md` with history + description blocks                                    |
+| `@game-jam`     | Explore creative ideas under a free theme; runs 3 sub-agents in parallel, scores all proposals, saves winner as `<slug>-mvp.md` and the rest as `<slug>.md` under `specs/game-jam/` |
