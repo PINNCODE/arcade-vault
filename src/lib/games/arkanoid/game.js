@@ -252,10 +252,16 @@ export function initGame(canvas, onGameOver, getPaused = () => false, onScoreCha
     rafId = requestAnimationFrame(loop);
   });
 
-  return function cleanup() {
+  function setKey(key, value) {
+    if (key in keys) keys[key] = value;
+  }
+
+  function cleanup() {
     if (rafId !== null) cancelAnimationFrame(rafId);
     canvas.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("keydown", onKeyDown);
     document.removeEventListener("keyup", onKeyUp);
-  };
+  }
+
+  return { cleanup, setKey };
 }

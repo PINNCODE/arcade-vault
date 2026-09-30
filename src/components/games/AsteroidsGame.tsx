@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTouchDevice } from "@/hooks/useTouchDevice";
+import { TouchControls } from "./TouchControls";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -13,7 +16,8 @@ export interface AsteroidsCallbacks {
 
 interface Props extends AsteroidsCallbacks {
   paused: boolean;
-  restartKey?: number; // increment to restart the game
+  restartKey?: number;
+  forceTouch?: boolean;
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
@@ -344,6 +348,7 @@ class Particle {
 export default function AsteroidsGame({
   paused,
   restartKey = 0,
+  forceTouch = false,
   onScoreChange,
   onLivesChange,
   onLevelChange,
@@ -351,6 +356,12 @@ export default function AsteroidsGame({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
+  const isTouch = useTouchDevice();
+  const showControls = isTouch || forceTouch;
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  useEffect(() => {
+    setPortalTarget(document.getElementById("game-touch-area") ?? document.body);
+  }, []);
 
   // game state refs
   const shipRef = useRef<Ship | null>(null);
@@ -658,12 +669,48 @@ export default function AsteroidsGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restartKey]);
 
+  const dirToKey: Record<string, string> = {
+    up: "ArrowUp",
+    down: "ArrowDown",
+    left: "ArrowLeft",
+    right: "ArrowRight",
+  };
+
+  function handleTouchDirection(dir: string) {
+    const code = dirToKey[dir];
+    if (!keysRef.current[code]) justPressedRef.current[code] = true;
+    keysRef.current[code] = true;
+  }
+
+  function handleTouchDirectionEnd(dir: string) {
+    keysRef.current[dirToKey[dir]] = false;
+  }
+
+  function handleTouchFire() {
+    justPressedRef.current["Space"] = true;
+  }
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={W}
-      height={H}
-      style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={W}
+        height={H}
+        style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
+      />
+      {portalTarget &&
+        createPortal(
+          <div className="flex items-center justify-center w-full h-full">
+            <TouchControls
+              visible={showControls}
+              layout="dpad"
+              onDirection={handleTouchDirection}
+              onDirectionEnd={handleTouchDirectionEnd}
+              onFire={handleTouchFire}
+            />
+          </div>,
+          portalTarget
+        )}
+    </>
   );
 }

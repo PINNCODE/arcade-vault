@@ -35,10 +35,10 @@ function writeUser(u: SessionUser | null) {
 }
 
 export function useSession() {
-  const [user, setUser] = useState<SessionUser | null>(readUser);
+  const [user, setUser] = useState<SessionUser | null>(null);
 
-  // Re-sync whenever another useSession instance writes a change
   useEffect(() => {
+    setUser(readUser());
     const handler = () => setUser(readUser());
     window.addEventListener(SESSION_EVENT, handler);
     return () => window.removeEventListener(SESSION_EVENT, handler);
@@ -56,9 +56,7 @@ export function useSession() {
 
   const saveScore = useCallback((entry: Omit<SavedScore, "at">) => {
     try {
-      const all: SavedScore[] = JSON.parse(
-        localStorage.getItem("av_scores") || "[]"
-      );
+      const all: SavedScore[] = JSON.parse(localStorage.getItem("av_scores") || "[]");
       all.push({ ...entry, at: Date.now() });
       localStorage.setItem("av_scores", JSON.stringify(all));
     } catch {}
