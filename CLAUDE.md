@@ -113,6 +113,7 @@ To know which games are already implemented, read `references/implemented-games.
 
 ## Adding a New Game
 
+0. Optional: ask `@game-planner` which game to add (suggestion history in `references/game-suggestions.md`)
 1. Run `/game-integration <game name>` — creates the spec
 2. Review spec → change state to `Approved`
 3. Run `/spec-impl NN-slug` — implements canvas component, play page, and Supabase score submission
